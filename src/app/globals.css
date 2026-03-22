@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-pink: #FF5FCF;
+  --color-border-dark: #121212;
+  --color-text-dark: #0a0a0a;
+  --color-surface-light: rgba(255, 255, 255, 0.4);
+}
+
+@layer base {
+  :root {
+    --background: var(--color-bg-pink);
+    --foreground: var(--color-text-dark);
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  overflow-x: hidden;
+  /* Anime.js blueprint grid effect - applied as dark lines on pink */
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Typography styles */
+.font-mono-code {
+  font-family: "Fira Code", "Space Mono", ui-monospace, monospace;
+}
+
+.text-outline-black {
+  -webkit-text-stroke: 3px #0a0a0a;
+  color: transparent;
+}
+
+/* Neo-Brutalist Anime.js Grid Panels */
+.blueprint-panel {
+  border: 2px solid var(--color-border-dark);
+  box-shadow: 6px 6px 0px var(--color-border-dark);
+  transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.blueprint-panel:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px var(--color-border-dark);
+}
+
+/* Neo-Brutalist Inputs */
+.blueprint-input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid var(--color-border-dark);
+  color: var(--color-text-dark);
+  box-shadow: 3px 3px 0px var(--color-border-dark);
+}
+
+.blueprint-input:focus {
+  outline: none;
+  background: #fff;
+  box-shadow: 5px 5px 0px var(--color-border-dark);
+  transform: translate(-2px, -2px);
+}
+
+/* Animations will be handled by GSAP, but basic stuff goes here */
+.stagger-item {
+  opacity: 0; /* Hidden by default until GSAP runs */
+  transform: translateY(30px);
+}
