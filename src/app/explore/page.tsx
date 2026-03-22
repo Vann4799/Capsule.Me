@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { formatEther } from "viem";
-import { usePublicClient, useReadContracts, useAccount } from "wagmi";
-import { parseAbiItem } from "viem";
+import { useReadContracts } from "wagmi";
 import BrutalistConnectButton from "@/components/BrutalistConnectButton";
-import gsap from "gsap";
 import capsulMeArtifact from "@/lib/CapsulMe.json";
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
@@ -36,11 +34,7 @@ function useCountdown(unlockTimeSecs: bigint) {
 }
 
 export default function ExplorePage() {
-  const { isConnected, address } = useAccount();
-  const publicClient = usePublicClient();
-  const headerRef = useRef(null);
-  const loadingRef = useRef(null);
-
+  const headerRef = useRef<HTMLElement>(null);
   const [tokenIds, setTokenIds] = useState<bigint[]>([]);
 
   // We are building an MVP and since 'totalSupply' does not exist on the current version of the contract,
@@ -139,7 +133,7 @@ export default function ExplorePage() {
 
         {/* Loading State */}
         {isLoading && (
-          <div ref={loadingRef} className="py-24 flex flex-col items-center justify-center gap-6 opacity-50">
+          <div className="py-24 flex flex-col items-center justify-center gap-6 opacity-50">
             <div className="w-16 h-16 border-4 border-black border-t-transparent animate-spin rounded-full"></div>
             <p className="font-mono-code font-bold uppercase tracking-widest animate-pulse">Scanning Global Mempool...</p>
           </div>
@@ -204,7 +198,7 @@ function ExplorerCard({ data, id }: { data: any, id: bigint }) {
         </div>
 
         {/* Values */}
-        {data.lockedValue > BigInt(0) && (
+        {!!data.lockedValue && data.lockedValue > 0n && (
           <div className="bg-black/5 border border-black p-2 flex justify-between items-center mt-2 group-hover:bg-[#FF5FCF] group-hover:text-black transition-colors">
             <span className="font-mono-code text-[9px] uppercase font-bold">ETH Payload</span>
             <span className="font-black text-xs">◈ {Number(formatEther(data.lockedValue)).toFixed(4).replace(/\.?0+$/, "")} ETH</span>
