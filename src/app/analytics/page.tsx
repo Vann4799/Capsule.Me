@@ -253,7 +253,7 @@ export default function AnalyticsPage() {
     : 0;
 
   return (
-    <main className="min-h-screen bg-[#FF5FCF] py-10 px-6 max-w-7xl mx-auto flex flex-col gap-10">
+    <main className="min-h-screen py-10 px-6 max-w-7xl mx-auto flex flex-col gap-10">
 
       {/* ── Header ── */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-black pb-6 w-full">
