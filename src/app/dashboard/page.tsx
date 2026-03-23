@@ -22,7 +22,7 @@ export default function Dashboard() {
   const timelineRef = useRef(null);
 
   // Core Form Tabs
-  const [activeTab, setActiveTab] = useState<"self" | "send">("self");
+  const [activeTab, setActiveTab] = useState<"self" | "send" | "pact">("self");
 
   // Form Fields
   const [title, setTitle] = useState("");
@@ -32,6 +32,10 @@ export default function Dashboard() {
   const [recipient, setRecipient] = useState("");
   const [ethAmount, setEthAmount] = useState<string>("");
   const [isPublic, setIsPublic] = useState(true);
+  
+  // Pact Specific Fields
+  const [signersStr, setSignersStr] = useState("");
+  const [threshold, setThreshold] = useState<number>(2);
   
   // Validation / Exec State
   const [errorMsg, setErrorMsg] = useState("");
@@ -79,6 +83,22 @@ export default function Dashboard() {
       return setErrorMsg("Invalid EVM recipient address format.");
     }
 
+    let parsedSigners: string[] = [];
+    if (activeTab === "pact") {
+      if (!signersStr) return setErrorMsg("Signer addresses are required for Pact capsules.");
+      parsedSigners = signersStr.split(",").map(s => s.trim()).filter(Boolean);
+      parsedSigners.unshift(address); // initiator is implicitly a signer
+      // Deduplicate addresses
+      parsedSigners = Array.from(new Set(parsedSigners.map(s => s.toLowerCase())));
+      if (parsedSigners.length < 2) return setErrorMsg("Pact requires at least 2 unique signers (including you).");
+      if (threshold < 2) return setErrorMsg("Threshold must be at least 2.");
+      if (threshold > parsedSigners.length) return setErrorMsg("Threshold cannot exceed total number of signers.");
+      
+      for (const s of parsedSigners) {
+        if (!/^0x[a-fA-F0-9]{40}$/.test(s)) return setErrorMsg(`Invalid EVM address: ${s}`);
+      }
+    }
+
     // Add 30 seconds buffer to accommodate MetaMask delays and IPFS uploads
     const unlockTimestamp = Math.floor(Date.now() / 1000) + unlockDurationSecs + 30;
    
@@ -107,12 +127,20 @@ export default function Dashboard() {
             args: [cid, BigInt(unlockTimestamp), finalTitle],
             value: ethAmount ? parseEther(ethAmount) : BigInt(0)
          });
-      } else {
+      } else if (activeTab === "send") {
          writeContract({
             address: CONTRACT_ADDRESS as `0x${string}`,
             abi: capsulMeArtifact.abi,
             functionName: "mintSendCapsule",
             args: [cid, BigInt(unlockTimestamp), recipient, finalTitle],
+            value: ethAmount ? parseEther(ethAmount) : BigInt(0)
+         });
+      } else if (activeTab === "pact") {
+         writeContract({
+            address: CONTRACT_ADDRESS as `0x${string}`,
+            abi: capsulMeArtifact.abi,
+            functionName: "mintPactCapsule",
+            args: [cid, parsedSigners, BigInt(threshold), finalTitle],
             value: ethAmount ? parseEther(ethAmount) : BigInt(0)
          });
       }
@@ -129,7 +157,7 @@ export default function Dashboard() {
       setIsProcessing(false);
       setStatusText("");
       setSuccessToast({ hash });
-      setTitle(""); setMessage(""); setUnlockDurationSecs(0); setCustomSecs(""); setRecipient(""); setEthAmount("");
+      setTitle(""); setMessage(""); setUnlockDurationSecs(0); setCustomSecs(""); setRecipient(""); setEthAmount(""); setSignersStr(""); setThreshold(2);
     }
   }, [isConfirmed, hash]);
 
@@ -300,17 +328,26 @@ export default function Dashboard() {
                   type="button" 
                   onClick={() => { setActiveTab("self"); setErrorMsg(""); }}
                   disabled={isProcessing}
-                  className={`flex-1 py-3 font-black uppercase tracking-widest text-xs sm:text-sm border-r-2 border-black transition-colors ${activeTab === 'self' ? 'bg-black text-[#FF5FCF]' : 'bg-transparent text-black/50 hover:bg-black hover:text-[#FF5FCF]'}`}
+                  className={`flex-1 py-3 font-black uppercase tracking-widest text-[10px] sm:text-xs border-r-2 border-black transition-colors ${activeTab === 'self' ? 'bg-black text-[#FF5FCF]' : 'bg-transparent text-black/50 hover:bg-black hover:text-[#FF5FCF]'}`}
                 >
-                  [ Self-Capsule ]
+                  [ Self-Lock ]
                 </button>
                 <button 
                   type="button" 
                   onClick={() => { setActiveTab("send"); setErrorMsg(""); }}
                   disabled={isProcessing}
-                  className={`flex-1 py-3 font-black uppercase tracking-widest text-xs sm:text-sm transition-colors ${activeTab === 'send' ? 'bg-black text-[#FF5FCF]' : 'bg-transparent text-black/50 hover:bg-black hover:text-[#FF5FCF]'}`}
+                  className={`flex-1 py-3 font-black uppercase tracking-widest text-[10px] sm:text-xs border-r-2 border-black transition-colors ${activeTab === 'send' ? 'bg-black text-[#FF5FCF]' : 'bg-transparent text-black/50 hover:bg-black hover:text-[#FF5FCF]'}`}
                 >
-                  [ Send to Address ]
+                  [ Send Target ]
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => { setActiveTab("pact"); setErrorMsg(""); }}
+                  disabled={isProcessing}
+                  className={`flex-1 flex flex-col items-center justify-center py-2 font-black uppercase tracking-widest text-[10px] sm:text-xs transition-colors ${activeTab === 'pact' ? 'bg-red-600 border-black text-black shadow-[inset_4px_4px_0_rgba(0,0,0,0.4)]' : 'bg-transparent text-black/50 hover:bg-red-600 hover:text-black hover:border-black'}`}
+                >
+                  <span>[ Blood Pact ]</span>
+                  <span className="text-[7px] tracking-widest opacity-80">(MULTI-SIG)</span>
                 </button>
               </div>
               
@@ -382,68 +419,108 @@ export default function Dashboard() {
                   />
                 </div>
 
-                <div className="flex flex-col gap-3 stagger-item opacity-0 translate-y-4">
-                  <label className="font-mono-code font-bold text-xs uppercase tracking-widest">
-                    // Protocol Execution Delay (Lock Duration)
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: "1 MIN", value: 60, tier: "DEV", color: "#22d3ee" },
-                      { label: "5 MIN", value: 300, tier: "DEV", color: "#22d3ee" },
-                      { label: "7 DAYS", value: 7*24*3600, tier: "PINK", color: "#FF5FCF" },
-                      { label: "1 MONTH", value: 30*24*3600, tier: "PINK", color: "#FF5FCF" },
-                      { label: "6 MONTHS", value: 180*24*3600, tier: "RED", color: "#FF2D55" },
-                      { label: "1 YEAR", value: 365*24*3600, tier: "RED", color: "#FF2D55" },
-                      { label: "2 YEARS", value: 730*24*3600, tier: "BLACK", color: "#1a1a1a" },
-                      { label: "5 YEARS", value: 1825*24*3600, tier: "BLACK", color: "#1a1a1a" },
-                    ].map((preset) => (
-                      <button
-                        key={preset.value}
-                        type="button"
-                        onClick={() => { setUnlockDurationSecs(preset.value); setCustomSecs(""); }}
-                        disabled={isProcessing}
-                        className={`border-2 border-black p-2 sm:p-3 flex flex-col items-center justify-center transition-all ${
-                          unlockDurationSecs === preset.value && customSecs === ""
-                            ? "bg-black text-white shadow-[4px_4px_0_rgba(0,0,0,1)] -translate-y-1"
-                            : "bg-transparent text-black hover:bg-black/5"
-                        }`}
-                      >
-                        <span className="font-black uppercase text-xs sm:text-sm">{preset.label}</span>
-                        <div className="flex items-center gap-1 mt-1 opacity-80">
-                          <span className="w-2 h-2 rounded-full border border-current" style={{ backgroundColor: preset.color }}></span>
-                          <span className="font-mono-code text-[9px] font-bold">{preset.tier}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Custom seconds input */}
-                  <div className="flex gap-2 mt-1 items-center">
-                    <input
-                      type="number"
-                      min="60"
-                      placeholder="Custom: seconds (e.g. 120)"
-                      className="blueprint-input flex-1 p-3 font-mono-code text-sm font-bold"
-                      value={customSecs}
-                      disabled={isProcessing}
-                      onChange={(e) => {
-                        setCustomSecs(e.target.value);
-                        const sec = parseInt(e.target.value);
-                        if (!isNaN(sec) && sec > 0) setUnlockDurationSecs(sec);
-                      }}
-                    />
-                    <span className="font-mono-code text-xs font-bold uppercase tracking-widest shrink-0">SEC</span>
-                  </div>
-
-                  {unlockDurationSecs > 0 && (
-                    <div className="mt-1 bg-black text-[#FF5FCF] font-mono-code p-3 text-xs font-bold flex flex-col sm:flex-row justify-between uppercase border-2 border-black tracking-widest">
-                      <span>Target Epoch Unlock:</span>
-                      <span className="text-white mt-1 sm:mt-0">
-                        {new Date(Date.now() + unlockDurationSecs * 1000).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
-                      </span>
+                {activeTab !== "pact" && (
+                  <div className="flex flex-col gap-3 stagger-item opacity-0 translate-y-4">
+                    <label className="font-mono-code font-bold text-xs uppercase tracking-widest">
+                      // Protocol Execution Delay (Lock Duration)
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: "1 MIN", value: 60, tier: "DEV", color: "#22d3ee" },
+                        { label: "5 MIN", value: 300, tier: "DEV", color: "#22d3ee" },
+                        { label: "7 DAYS", value: 7*24*3600, tier: "PINK", color: "#FF5FCF" },
+                        { label: "1 MONTH", value: 30*24*3600, tier: "PINK", color: "#FF5FCF" },
+                        { label: "6 MONTHS", value: 180*24*3600, tier: "RED", color: "#FF2D55" },
+                        { label: "1 YEAR", value: 365*24*3600, tier: "RED", color: "#FF2D55" },
+                        { label: "2 YEARS", value: 730*24*3600, tier: "BLACK", color: "#1a1a1a" },
+                        { label: "5 YEARS", value: 1825*24*3600, tier: "BLACK", color: "#1a1a1a" },
+                      ].map((preset) => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => { setUnlockDurationSecs(preset.value); setCustomSecs(""); }}
+                          disabled={isProcessing}
+                          className={`border-2 border-black p-2 sm:p-3 flex flex-col items-center justify-center transition-all ${
+                            unlockDurationSecs === preset.value && customSecs === ""
+                              ? "bg-black text-white shadow-[4px_4px_0_rgba(0,0,0,1)] -translate-y-1"
+                              : "bg-transparent text-black hover:bg-black/5"
+                          }`}
+                        >
+                          <span className="font-black uppercase text-xs sm:text-sm">{preset.label}</span>
+                          <div className="flex items-center gap-1 mt-1 opacity-80">
+                            <span className="w-2 h-2 rounded-full border border-current" style={{ backgroundColor: preset.color }}></span>
+                            <span className="font-mono-code text-[9px] font-bold">{preset.tier}</span>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                  )}
-                </div>
+
+                    {/* Custom seconds input */}
+                    <div className="flex gap-2 mt-1 items-center">
+                      <input
+                        type="number"
+                        min="60"
+                        placeholder="Custom: seconds (e.g. 120)"
+                        className="blueprint-input flex-1 p-3 font-mono-code text-sm font-bold"
+                        value={customSecs}
+                        disabled={isProcessing}
+                        onChange={(e) => {
+                          setCustomSecs(e.target.value);
+                          const sec = parseInt(e.target.value);
+                          if (!isNaN(sec) && sec > 0) setUnlockDurationSecs(sec);
+                        }}
+                      />
+                      <span className="font-mono-code text-xs font-bold uppercase tracking-widest shrink-0">SEC</span>
+                    </div>
+
+                    {unlockDurationSecs > 0 && (
+                      <div className="mt-1 bg-black text-[#FF5FCF] font-mono-code p-3 text-xs font-bold flex flex-col sm:flex-row justify-between uppercase border-2 border-black tracking-widest">
+                        <span>Target Epoch Unlock:</span>
+                        <span className="text-white mt-1 sm:mt-0">
+                          {new Date(Date.now() + unlockDurationSecs * 1000).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "pact" && (
+                  <div className="flex flex-col gap-4 stagger-item opacity-0 translate-y-4 blueprint-panel p-4 bg-red-600/10 border-red-600">
+                    <div className="flex flex-col gap-2">
+                      <label className="font-mono-code font-bold text-xs uppercase tracking-widest text-red-700">
+                        // Co-Signers (Comma Separated Addresses)
+                      </label>
+                      <textarea 
+                        className="blueprint-input w-full p-3 font-mono-code text-[10px] sm:text-xs font-bold border-red-600 focus:outline-red-600 resize-none h-20"
+                        placeholder="0x123..., 0x456..., 0x789..."
+                        value={signersStr}
+                        onChange={(e) => setSignersStr(e.target.value)}
+                        disabled={isProcessing}
+                      />
+                      <p className="font-mono-code text-[9px] font-bold opacity-60">
+                        Note: You are automatically included as a signer. Add the rest of your pact members here.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <label className="font-mono-code font-bold text-xs uppercase tracking-widest text-red-700">
+                        // Required Signatures (Threshold)
+                      </label>
+                      <input 
+                        type="number"
+                        min="2"
+                        className="blueprint-input w-full p-3 font-mono-code text-sm font-bold border-red-600 focus:outline-red-600"
+                        placeholder="e.g. 3"
+                        value={threshold}
+                        onChange={(e) => setThreshold(parseInt(e.target.value) || 2)}
+                        disabled={isProcessing}
+                      />
+                      <p className="font-mono-code text-[9px] font-bold opacity-60">
+                        How many signers must agree to unlock? (e.g. 3 out of 5)
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="pt-2 flex flex-col gap-4 stagger-item opacity-0 translate-y-4">
                   {/* Visibility Toggle */}

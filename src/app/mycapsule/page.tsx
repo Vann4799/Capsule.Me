@@ -308,6 +308,9 @@ export default function MyCapsulePage() {
             status:       Number(r[5]),
             title:        r[6],
             lockedValue:  r[7],
+            capsuleType:  Number(r[8]),
+            pactThreshold: Number(r[9]),
+            pactSignCount: Number(r[10]),
           },
         });
       }

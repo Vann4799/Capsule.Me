@@ -30,6 +30,9 @@ export interface CapsuleData {
   status: number;
   title: string;
   lockedValue: bigint;
+  capsuleType: number;
+  pactThreshold: number;
+  pactSignCount: number;
 }
 
 interface CapsuleCardProps {
@@ -131,12 +134,14 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
     if (isError) setErrorMsg(error?.message?.split("\n")[0] || "Failed to open capsule.");
   }, [isError, error]);
 
+  const isPact = data.capsuleType === 1;
+
   const handleOpen = () => {
     setErrorMsg("");
     writeContract({
       address: CONTRACT_ADDRESS,
       abi: capsulMeArtifact.abi,
-      functionName: "openCapsule",
+      functionName: isPact ? "signPact" : "openCapsule",
       args: [tokenId],
     });
   };
@@ -181,8 +186,17 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
               <path d="M6,65 L6,94 Q6,124 36,124 Q66,124 66,94 L66,65 Z" fill="rgba(0,0,0,0.75)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"/>
               <line x1="6" y1="65" x2="66" y2="65" stroke="rgba(255,255,255,0.4)" strokeWidth="2"/>
               <path d="M14,20 Q20,12 36,10 Q50,12 56,22" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="3" strokeLinecap="round"/>
-              <text x="36" y="48" textAnchor="middle" fill="rgba(0,0,0,0.8)" fontSize="8" fontWeight="900" fontFamily="monospace" letterSpacing="1">TIME</text>
-              <text x="36" y="88" textAnchor="middle" fill={tierCfg.color} fontSize="8" fontWeight="900" fontFamily="monospace" letterSpacing="1">LOCK</text>
+              {isPact ? (
+                <>
+                  <text x="36" y="48" textAnchor="middle" fill="rgba(0,0,0,0.8)" fontSize="8" fontWeight="900" fontFamily="monospace" letterSpacing="1">BLOOD</text>
+                  <text x="36" y="88" textAnchor="middle" fill={tierCfg.color} fontSize="8" fontWeight="900" fontFamily="monospace" letterSpacing="1">PACT</text>
+                </>
+              ) : (
+                <>
+                  <text x="36" y="48" textAnchor="middle" fill="rgba(0,0,0,0.8)" fontSize="8" fontWeight="900" fontFamily="monospace" letterSpacing="1">TIME</text>
+                  <text x="36" y="88" textAnchor="middle" fill={tierCfg.color} fontSize="8" fontWeight="900" fontFamily="monospace" letterSpacing="1">LOCK</text>
+                </>
+              )}
             </svg>
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
               <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></div>
@@ -234,9 +248,14 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
           )}
         </div>
 
-        {/* Countdown or date */}
+        {/* Countdown, Date, or Pact Status */}
         <div className="bg-black text-[#FF5FCF] p-2 font-mono-code text-xs">
-          {isOpened ? (
+          {isPact ? (
+            <div className="flex gap-2 items-center justify-between">
+              <span className="text-[#FF5FCF]/60 uppercase tracking-widest text-[9px]">Signatures</span>
+              <span className="font-bold text-white tracking-widest">{data.pactSignCount} / {data.pactThreshold}</span>
+            </div>
+          ) : isOpened ? (
             <span className="text-green-400 font-bold">✓ OPENED — Payload Revealed</span>
           ) : isReady ? (
             <span className="text-yellow-400 font-bold animate-pulse">⚡ UNLOCKED — Ready to open!</span>
@@ -248,10 +267,10 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
               <span><b className="text-white">{String(remaining.m).padStart(2,"0")}</b>m</span>
               <span><b className="text-white">{String(remaining.s).padStart(2,"0")}</b>s</span>
             </div>
-          ) : null}
+          ) : (
+            <span>Secured.</span>
+          )}
         </div>
-
-        {/* Meta */}
         <div className="font-mono-code text-[10px] text-black/50 space-y-1 border-l-2 border-black/20 pl-2">
           <p>UNLOCK: {unlockDate.toLocaleDateString("en-US", { dateStyle: "medium" })}</p>
           <p>FROM: {data.sender.substring(0, 6)}...{data.sender.slice(-4)}</p>
@@ -274,24 +293,6 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
             </div>
           ) : (
             <>
-              {/* SEALED — not ready yet */}
-              {!isOpened && !canOpen && !isPending && !isConfirming && (
-                <button disabled className="w-full py-3 font-black uppercase tracking-widest text-sm border-2 border-black/20 text-black/25 cursor-not-allowed bg-black/5">
-                  [■] SEALED
-                </button>
-              )}
-
-              {/* READY — can open */}
-              {!isOpened && canOpen && (
-                <button
-                  onClick={handleOpen}
-                  disabled={isPending || isConfirming}
-                  className="w-full py-3 font-black uppercase tracking-widest text-sm border-2 border-black bg-black text-[#FF5FCF] hover:-translate-y-1 hover:shadow-[4px_4px_0_rgba(0,0,0,1)] transition-all animate-pulse"
-                >
-                  [►] OPEN CAPSULE
-                </button>
-              )}
-
               {/* PENDING tx */}
               {(isPending || isConfirming) && (
                 <button disabled className="w-full py-3 font-black uppercase tracking-widest text-sm border-2 border-black bg-black text-[#FF5FCF] cursor-wait">
@@ -299,14 +300,70 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
                 </button>
               )}
 
+              {isPact && !isOpened && (
+                <button
+                  onClick={handleOpen}
+                  disabled={isPending}
+                  className={`w-full py-3 font-black uppercase text-xs tracking-widest transition-all ${
+                    isPending ? "bg-black/20 text-black/40" : "bg-red-600 text-black border-2 border-black hover:-translate-y-1 hover:shadow-[4px_4px_0_rgba(0,0,0,1)]"
+                  }`}
+                >
+                  {isPending ? "SIGNING..." : "✍ SIGN PACT"}
+                </button>
+              )}
+
+              {!isPact && canOpen && isOwner && (
+                <button 
+                  onClick={handleOpen}
+                  disabled={isPending}
+                  className={`w-full py-3 font-black uppercase text-xs tracking-widest border-2 border-black transition-all ${
+                    isPending ? "bg-black/5 text-black/30" : "bg-black text-[#FF5FCF] hover:-translate-y-1 hover:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-[#FF5FCF] hover:text-black hover:border-black"
+                  }`}
+                >
+                  {isPending ? "DECRYPTING..." : "DECRYPT & OPEN"}
+                </button>
+              )}
+
+              {(!canOpen || !isOwner) && !isOpened && !isPact && (
+                <div className="flex flex-col gap-2">
+                  <button disabled className="w-full py-3 bg-black/5 text-black/30 font-black uppercase text-xs tracking-widest border-2 border-black/10">
+                    LOCKED BY SMART CONTRACT
+                  </button>
+                  {address && data.sender.toLowerCase() === address.toLowerCase() && (
+                    <a 
+                      href={`https://testnets.opensea.io/assets/base-sepolia/${CONTRACT_ADDRESS}/${tokenId}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="w-full mt-1 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-[10px] py-1 text-center decoration-none"
+                    >
+                      ⇋ Trade on OpenSea
+                    </a>
+                  )}
+                </div>
+              )}
+
               {/* OPENED — CTA to trigger modal */}
               {isOpened && (
                 <button
-                  onClick={() => onRevealMessage && onRevealMessage(rawPayload, data.title, data.lockedValue)}
+                  onClick={() => onRevealMessage && onRevealMessage(rawPayload, displayTitle, data.lockedValue)}
                   className="w-full py-3 font-black uppercase tracking-widest text-sm border-2 border-[#FF5FCF] bg-[#FF5FCF] text-black hover:-translate-y-1 hover:shadow-[4px_4px_0_rgba(255,95,207,0.5)] transition-all animate-pulse"
                 >
                   [+] REVEAL MESSAGE
                 </button>
+              )}
+
+              {/* ── Zero-Coupon Bond: Trade Section ── */}
+              {!isOpened && (
+                <a
+                  href={`https://testnets.opensea.io/assets/base-sepolia/${CONTRACT_ADDRESS}/${tokenId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2 font-black uppercase tracking-widest text-[10px] border border-black/20 text-black/40 hover:border-black hover:text-black hover:bg-[#FF5FCF] transition-all flex items-center justify-center gap-2 group"
+                >
+                  <span className="font-mono-code">[◈]</span>
+                  <span>Trade on OpenSea</span>
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[8px]">↗</span>
+                </a>
               )}
             </>
           )}

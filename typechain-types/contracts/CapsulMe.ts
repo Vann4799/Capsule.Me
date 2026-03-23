@@ -30,22 +30,27 @@ export interface CapsulMeInterface extends Interface {
       | "balanceOf"
       | "capsules"
       | "getApproved"
+      | "getPactInvites"
+      | "getPactSigners"
       | "getReceivedCapsules"
       | "getSentCapsules"
       | "ipfsGateway"
       | "isApprovedForAll"
+      | "mintPactCapsule"
       | "mintSelfCapsule"
       | "mintSendCapsule"
       | "name"
       | "openCapsule"
       | "owner"
       | "ownerOf"
+      | "pactSigned"
       | "renounceOwnership"
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
       | "setApprovalForAll"
       | "setImageCIDs"
       | "setIpfsGateway"
+      | "signPact"
       | "supportsInterface"
       | "symbol"
       | "tierImageCIDs"
@@ -63,6 +68,8 @@ export interface CapsulMeInterface extends Interface {
       | "CapsuleOpened"
       | "ImageCIDsUpdated"
       | "OwnershipTransferred"
+      | "PactMinted"
+      | "PactSigned"
       | "Transfer"
   ): EventFragment;
 
@@ -83,6 +90,14 @@ export interface CapsulMeInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "getPactInvites",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getPactSigners",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "getReceivedCapsules",
     values: [AddressLike]
   ): string;
@@ -97,6 +112,10 @@ export interface CapsulMeInterface extends Interface {
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "mintPactCapsule",
+    values: [string, AddressLike[], BigNumberish, string]
   ): string;
   encodeFunctionData(
     functionFragment: "mintSelfCapsule",
@@ -115,6 +134,10 @@ export interface CapsulMeInterface extends Interface {
   encodeFunctionData(
     functionFragment: "ownerOf",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "pactSigned",
+    values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "renounceOwnership",
@@ -139,6 +162,10 @@ export interface CapsulMeInterface extends Interface {
   encodeFunctionData(
     functionFragment: "setIpfsGateway",
     values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "signPact",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -174,6 +201,14 @@ export interface CapsulMeInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getPactInvites",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getPactSigners",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getReceivedCapsules",
     data: BytesLike
   ): Result;
@@ -187,6 +222,10 @@ export interface CapsulMeInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "mintPactCapsule",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -204,6 +243,7 @@ export interface CapsulMeInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "ownerOf", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "pactSigned", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -228,6 +268,7 @@ export interface CapsulMeInterface extends Interface {
     functionFragment: "setIpfsGateway",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "signPact", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
@@ -372,6 +413,59 @@ export namespace OwnershipTransferredEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace PactMintedEvent {
+  export type InputTuple = [
+    tokenId: BigNumberish,
+    initiator: AddressLike,
+    signers: AddressLike[],
+    threshold: BigNumberish,
+    value: BigNumberish
+  ];
+  export type OutputTuple = [
+    tokenId: bigint,
+    initiator: string,
+    signers: string[],
+    threshold: bigint,
+    value: bigint
+  ];
+  export interface OutputObject {
+    tokenId: bigint;
+    initiator: string;
+    signers: string[];
+    threshold: bigint;
+    value: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace PactSignedEvent {
+  export type InputTuple = [
+    tokenId: BigNumberish,
+    signer: AddressLike,
+    signCount: BigNumberish,
+    threshold: BigNumberish
+  ];
+  export type OutputTuple = [
+    tokenId: bigint,
+    signer: string,
+    signCount: bigint,
+    threshold: bigint
+  ];
+  export interface OutputObject {
+    tokenId: bigint;
+    signer: string;
+    signCount: bigint;
+    threshold: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace TransferEvent {
   export type InputTuple = [
     from: AddressLike,
@@ -444,7 +538,19 @@ export interface CapsulMe extends BaseContract {
   capsules: TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [string, bigint, string, string, bigint, bigint, string, bigint] & {
+      [
+        string,
+        bigint,
+        string,
+        string,
+        bigint,
+        bigint,
+        string,
+        bigint,
+        bigint,
+        bigint,
+        bigint
+      ] & {
         encryptedCID: string;
         unlockTime: bigint;
         sender: string;
@@ -453,12 +559,23 @@ export interface CapsulMe extends BaseContract {
         status: bigint;
         title: string;
         lockedValue: bigint;
+        capsuleType: bigint;
+        pactThreshold: bigint;
+        pactSignCount: bigint;
       }
     ],
     "view"
   >;
 
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
+
+  getPactInvites: TypedContractMethod<[_user: AddressLike], [bigint[]], "view">;
+
+  getPactSigners: TypedContractMethod<
+    [_tokenId: BigNumberish],
+    [string[]],
+    "view"
+  >;
 
   getReceivedCapsules: TypedContractMethod<
     [_user: AddressLike],
@@ -478,6 +595,17 @@ export interface CapsulMe extends BaseContract {
     [owner: AddressLike, operator: AddressLike],
     [boolean],
     "view"
+  >;
+
+  mintPactCapsule: TypedContractMethod<
+    [
+      _encryptedCID: string,
+      _signers: AddressLike[],
+      _threshold: BigNumberish,
+      _title: string
+    ],
+    [bigint],
+    "payable"
   >;
 
   mintSelfCapsule: TypedContractMethod<
@@ -508,6 +636,12 @@ export interface CapsulMe extends BaseContract {
   owner: TypedContractMethod<[], [string], "view">;
 
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
+
+  pactSigned: TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [boolean],
+    "view"
+  >;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
@@ -541,6 +675,8 @@ export interface CapsulMe extends BaseContract {
   >;
 
   setIpfsGateway: TypedContractMethod<[_gateway: string], [void], "nonpayable">;
+
+  signPact: TypedContractMethod<[_tokenId: BigNumberish], [void], "nonpayable">;
 
   supportsInterface: TypedContractMethod<
     [interfaceId: BytesLike],
@@ -591,7 +727,19 @@ export interface CapsulMe extends BaseContract {
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [string, bigint, string, string, bigint, bigint, string, bigint] & {
+      [
+        string,
+        bigint,
+        string,
+        string,
+        bigint,
+        bigint,
+        string,
+        bigint,
+        bigint,
+        bigint,
+        bigint
+      ] & {
         encryptedCID: string;
         unlockTime: bigint;
         sender: string;
@@ -600,6 +748,9 @@ export interface CapsulMe extends BaseContract {
         status: bigint;
         title: string;
         lockedValue: bigint;
+        capsuleType: bigint;
+        pactThreshold: bigint;
+        pactSignCount: bigint;
       }
     ],
     "view"
@@ -607,6 +758,12 @@ export interface CapsulMe extends BaseContract {
   getFunction(
     nameOrSignature: "getApproved"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
+  getFunction(
+    nameOrSignature: "getPactInvites"
+  ): TypedContractMethod<[_user: AddressLike], [bigint[]], "view">;
+  getFunction(
+    nameOrSignature: "getPactSigners"
+  ): TypedContractMethod<[_tokenId: BigNumberish], [string[]], "view">;
   getFunction(
     nameOrSignature: "getReceivedCapsules"
   ): TypedContractMethod<[_user: AddressLike], [bigint[]], "view">;
@@ -622,6 +779,18 @@ export interface CapsulMe extends BaseContract {
     [owner: AddressLike, operator: AddressLike],
     [boolean],
     "view"
+  >;
+  getFunction(
+    nameOrSignature: "mintPactCapsule"
+  ): TypedContractMethod<
+    [
+      _encryptedCID: string,
+      _signers: AddressLike[],
+      _threshold: BigNumberish,
+      _title: string
+    ],
+    [bigint],
+    "payable"
   >;
   getFunction(
     nameOrSignature: "mintSelfCapsule"
@@ -654,6 +823,13 @@ export interface CapsulMe extends BaseContract {
   getFunction(
     nameOrSignature: "ownerOf"
   ): TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
+  getFunction(
+    nameOrSignature: "pactSigned"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [boolean],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
@@ -693,6 +869,9 @@ export interface CapsulMe extends BaseContract {
   getFunction(
     nameOrSignature: "setIpfsGateway"
   ): TypedContractMethod<[_gateway: string], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "signPact"
+  ): TypedContractMethod<[_tokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;
@@ -760,6 +939,20 @@ export interface CapsulMe extends BaseContract {
     OwnershipTransferredEvent.InputTuple,
     OwnershipTransferredEvent.OutputTuple,
     OwnershipTransferredEvent.OutputObject
+  >;
+  getEvent(
+    key: "PactMinted"
+  ): TypedContractEvent<
+    PactMintedEvent.InputTuple,
+    PactMintedEvent.OutputTuple,
+    PactMintedEvent.OutputObject
+  >;
+  getEvent(
+    key: "PactSigned"
+  ): TypedContractEvent<
+    PactSignedEvent.InputTuple,
+    PactSignedEvent.OutputTuple,
+    PactSignedEvent.OutputObject
   >;
   getEvent(
     key: "Transfer"
@@ -834,6 +1027,28 @@ export interface CapsulMe extends BaseContract {
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
+    >;
+
+    "PactMinted(uint256,address,address[],uint256,uint256)": TypedContractEvent<
+      PactMintedEvent.InputTuple,
+      PactMintedEvent.OutputTuple,
+      PactMintedEvent.OutputObject
+    >;
+    PactMinted: TypedContractEvent<
+      PactMintedEvent.InputTuple,
+      PactMintedEvent.OutputTuple,
+      PactMintedEvent.OutputObject
+    >;
+
+    "PactSigned(uint256,address,uint256,uint256)": TypedContractEvent<
+      PactSignedEvent.InputTuple,
+      PactSignedEvent.OutputTuple,
+      PactSignedEvent.OutputObject
+    >;
+    PactSigned: TypedContractEvent<
+      PactSignedEvent.InputTuple,
+      PactSignedEvent.OutputTuple,
+      PactSignedEvent.OutputObject
     >;
 
     "Transfer(address,address,uint256)": TypedContractEvent<
