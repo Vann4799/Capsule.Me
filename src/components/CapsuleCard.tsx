@@ -166,7 +166,7 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
           <img
             src={nftImageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")}
             alt={data.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-90 mix-blend-overlay"
+            className="absolute inset-0 w-full h-full object-contain"
             onError={() => setImageUrl(null)}
           />
         ) : (
