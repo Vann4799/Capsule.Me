@@ -89,10 +89,13 @@ function BarChart({ bars, label }: { bars: { name: string; value: number; color:
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, sub, accent }: { icon: string; label: string; value: string | number; sub?: string; accent?: string }) {
   return (
-    <div className={`bg-[#FF5FCF] border-2 border-black p-4 flex flex-col gap-1 shadow-[4px_4px_0_rgba(0,0,0,1)]`} style={accent ? { borderLeftColor: accent, borderLeftWidth: 6 } : {}}>
-      <span className="font-mono-code text-[10px] uppercase tracking-widest text-black/50 font-bold">{icon} {label}</span>
+    <div
+      className="bg-[#FF5FCF] border-2 border-black p-4 flex flex-col gap-1 shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all"
+      style={accent ? { borderLeftColor: accent, borderLeftWidth: 5 } : {}}
+    >
+      <span className="font-mono-code text-[10px] uppercase tracking-widest text-black/60 font-bold">{icon} {label}</span>
       <span className="font-black text-2xl uppercase tracking-tight leading-none">{value}</span>
-      {sub && <span className="font-mono-code text-[10px] text-black/40 font-bold uppercase">{sub}</span>}
+      {sub && <span className="font-mono-code text-[10px] text-black/50 font-bold uppercase">{sub}</span>}
     </div>
   );
 }
@@ -100,8 +103,12 @@ function StatCard({ icon, label, value, sub, accent }: { icon: string; label: st
 // ─── Badge ────────────────────────────────────────────────────────────────────
 function Badge({ icon, title, desc, unlocked }: { icon: string; title: string; desc: string; unlocked: boolean }) {
   return (
-    <div className={`border-2 border-black p-3 flex flex-col items-center gap-1 text-center transition-all ${unlocked ? "bg-[#FF5FCF] shadow-[4px_4px_0_rgba(0,0,0,1)]" : "bg-[#FF5FCF] opacity-50"}`}>
-      <span className="text-2xl">{icon}</span>
+    <div className={`border-2 border-black p-3 flex flex-col items-center gap-1 text-center transition-all ${
+      unlocked
+        ? "bg-black text-[#FF5FCF] shadow-[4px_4px_0_rgba(0,0,0,1)]"
+        : "bg-[#FF5FCF] opacity-40"
+    }`}>
+      <span className="font-mono-code font-black text-xl">{icon}</span>
       <span className="font-black uppercase text-xs tracking-tight leading-tight">{title}</span>
       <span className="font-mono-code text-[9px] font-bold opacity-70 uppercase leading-tight">{desc}</span>
     </div>
@@ -237,14 +244,14 @@ export default function AnalyticsPage() {
   const milestones = useMemo(() => {
     const s = stats;
     return [
-      { icon: "🧬", title: "Capsule Pioneer", desc: "Created first capsule", unlocked: (s?.created ?? 0) >= 1 },
-      { icon: "📦", title: "Hoarder",         desc: "5+ capsules total",      unlocked: (s?.total ?? 0) >= 5 },
-      { icon: "💸", title: "Value Locker",    desc: "Locked 0.01+ ETH",       unlocked: (s?.totalLocked ?? 0n) >= BigInt("10000000000000000") },
-      { icon: "🤝", title: "Pact Maker",      desc: "Created a Blood Pact",   unlocked: (s?.pact ?? 0) >= 1 },
-      { icon: "📬", title: "Gift Giver",      desc: "Sent capsule to others", unlocked: (s?.created ?? 0) - (s?.self ?? 0) > 0 },
-      { icon: "⏳", title: "Time Warrior",    desc: "2+ year lock",           unlocked: !!(s?.longest && (s.longest.unlockTime - now) > 60 * 60 * 24 * 365 * 2) },
-      { icon: "🏆", title: "Collector",       desc: "Received 3+ capsules",   unlocked: (s?.received ?? 0) >= 3 },
-      { icon: "🔓", title: "Redeemer",        desc: "Opened a capsule",       unlocked: (s?.statusCounts[2] ?? 0) >= 1 },
+      { icon: "[■]", title: "Capsule Pioneer", desc: "Created first capsule", unlocked: (s?.created ?? 0) >= 1 },
+      { icon: "[≡]", title: "Hoarder",         desc: "5+ capsules total",      unlocked: (s?.total ?? 0) >= 5 },
+      { icon: "[◈]", title: "Value Locker",    desc: "Locked 0.01+ ETH",       unlocked: (s?.totalLocked ?? 0n) >= BigInt("10000000000000000") },
+      { icon: "[♦]", title: "Pact Maker",      desc: "Created a Blood Pact",   unlocked: (s?.pact ?? 0) >= 1 },
+      { icon: "[►]", title: "Gift Giver",      desc: "Sent capsule to others", unlocked: (s?.created ?? 0) - (s?.self ?? 0) > 0 },
+      { icon: "[∞]", title: "Time Warrior",    desc: "2+ year lock",           unlocked: !!(s?.longest && (s.longest.unlockTime - now) > 60 * 60 * 24 * 365 * 2) },
+      { icon: "[★]", title: "Collector",       desc: "Received 3+ capsules",   unlocked: (s?.received ?? 0) >= 3 },
+      { icon: "[○]", title: "Redeemer",        desc: "Opened a capsule",       unlocked: (s?.statusCounts[2] ?? 0) >= 1 },
     ];
   }, [stats, now]);
 
@@ -323,12 +330,12 @@ export default function AnalyticsPage() {
               <span className="font-mono-code text-sm text-black/40">[01]</span> Overview
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <StatCard icon="📦" label="Total"    value={stats.total}    accent="#FF5FCF" />
-              <StatCard icon="✍️" label="Created"  value={stats.created}  />
-              <StatCard icon="📬" label="Received" value={stats.received} />
-              <StatCard icon="🔒" label="Locked"   value={stats.statusCounts[0]} />
-              <StatCard icon="⚡" label="Unlocked" value={stats.statusCounts[1]} />
-              <StatCard icon="✅" label="Opened"   value={stats.statusCounts[2]} />
+              <StatCard icon="[■]" label="Total"    value={stats.total}    accent="#000000" />
+              <StatCard icon="[+]" label="Created"  value={stats.created}  />
+              <StatCard icon="[◄]" label="Received" value={stats.received} />
+              <StatCard icon="[□]" label="Locked"   value={stats.statusCounts[0]} />
+              <StatCard icon="[►]" label="Unlocked" value={stats.statusCounts[1]} />
+              <StatCard icon="[✓]" label="Opened"   value={stats.statusCounts[2]} />
             </div>
           </section>
 
@@ -339,17 +346,17 @@ export default function AnalyticsPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <StatCard
-                icon="💰" label="Total ETH Locked (All Time)"
+                icon="[◈]" label="Total ETH Locked (All Time)"
                 value={`${parseFloat(formatEther(stats.totalLocked)).toFixed(4)} ETH`}
-                accent="#FF5FCF"
+                accent="#000000"
               />
               <StatCard
-                icon="🏦" label="ETH Still In Vaults"
+                icon="[≡]" label="ETH Still In Vaults"
                 value={`${parseFloat(formatEther(stats.activeLocked)).toFixed(4)} ETH`}
                 accent="#FF2D55"
               />
               <StatCard
-                icon="🎉" label="ETH Claimed"
+                icon="[★]" label="ETH Claimed"
                 value={`${parseFloat(formatEther(stats.totalClaimed)).toFixed(4)} ETH`}
                 accent="#22c55e"
               />
