@@ -89,7 +89,7 @@ function BarChart({ bars, label }: { bars: { name: string; value: number; color:
 // ─── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, sub, accent }: { icon: string; label: string; value: string | number; sub?: string; accent?: string }) {
   return (
-    <div className={`blueprint-panel border-2 border-black p-4 flex flex-col gap-1 shadow-[4px_4px_0_rgba(0,0,0,1)]`} style={accent ? { borderLeftColor: accent, borderLeftWidth: 6 } : {}}>
+    <div className={`bg-white border-2 border-black p-4 flex flex-col gap-1 shadow-[4px_4px_0_rgba(0,0,0,1)]`} style={accent ? { borderLeftColor: accent, borderLeftWidth: 6 } : {}}>
       <span className="font-mono-code text-[10px] uppercase tracking-widest text-black/50 font-bold">{icon} {label}</span>
       <span className="font-black text-2xl uppercase tracking-tight leading-none">{value}</span>
       {sub && <span className="font-mono-code text-[10px] text-black/40 font-bold uppercase">{sub}</span>}
@@ -100,7 +100,7 @@ function StatCard({ icon, label, value, sub, accent }: { icon: string; label: st
 // ─── Badge ────────────────────────────────────────────────────────────────────
 function Badge({ icon, title, desc, unlocked }: { icon: string; title: string; desc: string; unlocked: boolean }) {
   return (
-    <div className={`border-2 border-black p-3 flex flex-col items-center gap-1 text-center transition-all ${unlocked ? "bg-[#FF5FCF] shadow-[4px_4px_0_rgba(0,0,0,1)]" : "bg-black/5 opacity-40 grayscale"}`}>
+    <div className={`border-2 border-black p-3 flex flex-col items-center gap-1 text-center transition-all ${unlocked ? "bg-[#FF5FCF] shadow-[4px_4px_0_rgba(0,0,0,1)]" : "bg-white opacity-50"}`}>
       <span className="text-2xl">{icon}</span>
       <span className="font-black uppercase text-xs tracking-tight leading-tight">{title}</span>
       <span className="font-mono-code text-[9px] font-bold opacity-70 uppercase leading-tight">{desc}</span>
@@ -253,7 +253,7 @@ export default function AnalyticsPage() {
     : 0;
 
   return (
-    <main className="min-h-screen py-10 px-6 max-w-7xl mx-auto flex flex-col gap-10">
+    <main className="min-h-screen bg-white py-10 px-6 max-w-7xl mx-auto flex flex-col gap-10">
 
       {/* ── Header ── */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b-2 border-black pb-6 w-full">
@@ -361,7 +361,7 @@ export default function AnalyticsPage() {
             <h2 className="font-black uppercase text-2xl tracking-tighter mb-4 flex items-center gap-3">
               <span className="font-mono-code text-sm text-black/40">[03]</span> Distribution
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 border-2 border-black p-6 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 bg-white border-2 border-black p-6 shadow-[4px_4px_0_rgba(0,0,0,1)]">
               <DonutChart
                 label="By Tier"
                 segments={[
@@ -395,7 +395,7 @@ export default function AnalyticsPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {stats.longest && (
-                <div className="border-2 border-black p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col gap-1">
+                <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col gap-1">
                   <span className="font-mono-code text-[10px] uppercase tracking-widest text-black/50 font-bold">⏱ Longest Active Lock</span>
                   <span className="font-black uppercase text-xl tracking-tight truncate">{stats.longest.title || "Untitled"}</span>
                   <span className="font-mono-code text-sm font-bold text-black/70">{longestDays} days remaining</span>
@@ -403,7 +403,7 @@ export default function AnalyticsPage() {
                 </div>
               )}
               {stats.mostRecent && (
-                <div className="border-2 border-black p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col gap-1">
+                <div className="bg-white border-2 border-black p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col gap-1">
                   <span className="font-mono-code text-[10px] uppercase tracking-widest text-black/50 font-bold">🆕 Most Recent Capsule</span>
                   <span className="font-black uppercase text-xl tracking-tight truncate">{stats.mostRecent.title || "Untitled"}</span>
                   <span className="font-mono-code text-sm font-bold text-black/70">Capsule #{stats.mostRecent.id.toString()}</span>
@@ -419,7 +419,7 @@ export default function AnalyticsPage() {
               <h2 className="font-black uppercase text-2xl tracking-tighter mb-4 flex items-center gap-3">
                 <span className="font-mono-code text-sm text-black/40">[05]</span> Top Senders To You
               </h2>
-              <div className="flex flex-col gap-2 border-2 border-black p-4 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+              <div className="flex flex-col gap-2 bg-white border-2 border-black p-4 shadow-[4px_4px_0_rgba(0,0,0,1)]">
                 {stats.topSenders.map(([addr, count], i) => (
                   <div key={addr} className="flex items-center justify-between border-b border-black/10 pb-2 last:border-0 last:pb-0">
                     <div className="flex items-center gap-3">
