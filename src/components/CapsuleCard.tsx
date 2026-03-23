@@ -92,7 +92,7 @@ function useNftImage(tokenId: bigint) {
     }
   }, [tokenUri]);
 
-  return imageUrl;
+  return [imageUrl, setImageUrl] as const;
 }
 
 // ─── CapsuleCard Component ────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
   const isOwner = address?.toLowerCase() === data.receiver.toLowerCase();
 
   const [errorMsg, setErrorMsg] = useState("");
-  const nftImageUrl = useNftImage(tokenId);
+  const [nftImageUrl, setImageUrl] = useNftImage(tokenId);
 
   const rawPayload = data.encryptedCID;
   const rawTitle = data.title || "Untitled Capsule";
@@ -162,15 +162,15 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
         />
 
         {/* NFT Image or Loading Fallback */}
-        {nftImageUrl ? (
+        {nftImageUrl && !nftImageUrl.includes("QmPlaceholderIfEmpty") ? (
           <img
-            src={nftImageUrl}
+            src={nftImageUrl.replace("ipfs://", "https://gateway.pinata.cloud/ipfs/")}
             alt={data.title}
-            className="absolute inset-0 w-full h-full object-contain"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            className="absolute inset-0 w-full h-full object-cover opacity-90 mix-blend-overlay"
+            onError={() => setImageUrl(null)}
           />
         ) : (
-          /* Glow + Capsule SVG while loading */
+          /* Glow + Capsule SVG while loading or if no image */
           <>
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-28 h-28 rounded-full opacity-30 blur-2xl" style={{ backgroundColor: tierCfg.color }} />
