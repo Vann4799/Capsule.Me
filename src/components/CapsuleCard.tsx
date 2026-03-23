@@ -329,16 +329,6 @@ export default function CapsuleCard({ tokenId, data, onOpened, onRevealMessage }
                   <button disabled className="w-full py-3 bg-black/5 text-black/30 font-black uppercase text-xs tracking-widest border-2 border-black/10">
                     LOCKED BY SMART CONTRACT
                   </button>
-                  {address && data.sender.toLowerCase() === address.toLowerCase() && (
-                    <a 
-                      href={`https://testnets.opensea.io/assets/base-sepolia/${CONTRACT_ADDRESS}/${tokenId}`}
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="w-full mt-1 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-[10px] py-1 text-center decoration-none"
-                    >
-                      ⇋ Trade on OpenSea
-                    </a>
-                  )}
                 </div>
               )}
 
